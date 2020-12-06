@@ -1,0 +1,109 @@
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+     {
+        {if(OrdersTotal()==0);}
+
+        {
+         // current symbol, current period, 50 candles, no shift, smoothed, close price
+         double SlowMovingAverage = iMA(NULL, 0,100,0,MODE_SMMA,PRICE_CLOSE,0);
+
+         // current symbol, current period, 50 candles, no shift, smoothed, close price
+         double LastSlowMovingAverage = iMA(NULL, 0,100,0,MODE_SMMA,PRICE_CLOSE,1);
+
+         // current symbol, current period, 2 candles, no shift, smoothed, close price
+         double FastMovingAverage = iMA(NULL, 0,2,0,MODE_SMMA,PRICE_CLOSE,0);
+
+         // current symbol, current period, 2 candles, no shift, smoothed, close price
+         double LastFastMovingAverage = iMA(NULL, 0,2,0,MODE_SMMA,PRICE_CLOSE,1);
+
+           {
+            // If the fast SMMA is now above (crosses up)
+            if((LastFastMovingAverage < LastSlowMovingAverage)
+               && (FastMovingAverage > SlowMovingAverage) && (OrdersTotal()<4))
+
+               // send buy order
+               int buyticket = OrderSend
+                               (
+                                  Symbol(),      //currency pair on the chart
+                                  OP_BUY,        //buy without delay
+                                  1.00,          // 1 lot
+                                  Ask,           // for the market price
+                                  3,             // only 3 pips slippage
+                                  Ask-300*_Point,  // SL 300 points
+                                  Ask+300*_Point, // TP 300 points
+                                  NULL,          // no comment text
+                                  0,             // no id number
+                                  0,             // no expiration date
+                                  Green          // draw green arrow
+                               );
+           }
+         // Chart output for buy signal
+         Comment("BUY");
+        }
+        {
+         // If the fast SMMA is now below (crosses down)
+         if((LastFastMovingAverage > LastSlowMovingAverage)
+            && (FastMovingAverage < SlowMovingAverage) && (OrdersTotal()<8))
+
+            // send SELL order
+            int sellticket = OrderSend
+                             (
+                                Symbol(),      //currency pair on the chart
+                                OP_SELL,        //buy without delay
+                                1.00,          // 1 lot
+                                Ask,           // for the market price
+                                3,             // only 3 pips slippage
+                                Ask+300*_Point,  // SL 300 points
+                                Ask-600*_Point, // TP 600 points
+                                NULL,          // no comment text
+                                0,             // no id number
+                                0,             // no expiration date
+                                Red          // draw green arrow
+                             );
+
+         // Chart output for buy signal
+         Comment("SELL");
+        }
+     }
+//+------------------------------------------------------------------+
+
+
+
+
+     {
+      // if we have no open orders
+      if(OrdersTotal()==0)
+        {
+         // we open a demo buy trade for 10 microlots
+         //     int buyticket = OrderSend(Symbol(),OP_BUY,0.10,Ask,2,0,0,NULL,0,0,Green);
+        }
+
+      for(int b=OrdersTotal()-1; b>=0; b--)
+        {
+         // we select one of the orders
+         if(OrderSelect(b, SELECT_BY_POS,MODE_TRADES))
+            //we check id the order belongs to the current chart
+            if(OrderSymbol()==Symbol())
+               //if it is a buy order
+               if(OrderType()==OP_BUY)
+                 {
+                  //if the stop loss is below 300 Points
+                  if(OrderStopLoss() < Ask - (300* _Point))
+                     // we modify the stop loss
+                     OrderModify(
+                        OrderTicket(),       // for current order
+                        OrderOpenPrice(),    // opened for the OpenPrice
+                        Ask-(300* _Point),   // set stop loss
+                        Ask+(300* _Point),   // set take profit
+                        0,                   // no expiration
+                        CLR_NONE             // no colour
+                     ) ;
+                 } // for end
+        }
+     }
+  }
+//+------------------------------------------------------------------+
+
